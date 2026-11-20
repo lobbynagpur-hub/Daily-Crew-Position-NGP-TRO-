@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NGP Division · Crew Management</title>
+<style>
+  * { box-sizing: border-box; }
+  :root {
+    --green: #4e8b65; --green-dark: #286044; --green-pale: #edf5ef;
+    --ink: #26332c; --muted: #6b776f; --line: #d9e1db;
+    --paper: #ffffff; --canvas: #f3f6f3;
+  }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--canvas); color: var(--ink);
+         font-family: "Segoe UI", Arial, sans-serif; font-size: 13px;
+         display: flex; align-items: center; justify-content: center;
+         padding: 40px 20px; min-height: 100vh; }
+  .page { max-width: 900px; width: 100%; }
+
+  .brand { text-align: center; margin-bottom: 42px; }
+  .brand .eyebrow { margin: 0 0 10px; color: var(--green-dark); font-size: 11px;
+                    font-weight: 800; letter-spacing: 2.5px; }
+  .brand h1 { margin: 0; font-size: clamp(28px, 4.2vw, 42px); letter-spacing: -1px;
+              font-weight: 700; }
+  .brand p { color: var(--muted); margin: 10px 0 0; font-size: 14px; }
+
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 640px) { .actions { grid-template-columns: 1fr; } }
+
+  .action-card {
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    gap: 14px; padding: 36px 24px 32px; background: #fff;
+    border: 1px solid var(--line); border-radius: 14px;
+    text-decoration: none; color: inherit;
+    transition: .2s ease; position: relative; overflow: hidden;
+  }
+  .action-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    background: var(--green-dark); opacity: 0; transition: .2s;
+  }
+  .action-card:hover { transform: translateY(-3px);
+                       box-shadow: 0 12px 30px rgba(28,55,37,.12);
+                       border-color: var(--green); }
+  .action-card:hover::before { opacity: 1; }
+
+  .action-icon {
+    width: 64px; height: 64px; border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--green-pale); color: var(--green-dark);
+    font-size: 30px; margin-bottom: 4px;
+  }
+  .action-card:nth-child(2) .action-icon {
+    background: #fdf3d4; color: #7a5a12;
+  }
+
+  .action-card h2 { margin: 0; font-size: 18px; font-weight: 700; }
+  .action-card p { margin: 0; color: var(--muted); font-size: 12.5px;
+                   line-height: 1.5; max-width: 280px; }
+  .action-card .cta {
+    margin-top: 6px; font-size: 12px; font-weight: 700;
+    color: var(--green-dark); display: inline-flex; align-items: center; gap: 6px;
+  }
+  .action-card:nth-child(2) .cta { color: #7a5a12; }
+
+  .foot { text-align: center; margin-top: 40px; color: var(--muted); font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="brand">
+    <p class="eyebrow">NAGPUR DIVISION</p>
+    <h1>Crew Management System</h1>
+    <p>View consolidated staff position or update crew data for any lobby</p>
+  </div>
+
+  <div class="actions">
+    <a href="mastertable.html" class="action-card">
+      <div class="action-icon">▦</div>
+      <h2>View Staff Position</h2>
+      <p>See the consolidated staff availability report across all lobbies and categories.</p>
+      <span class="cta">Open report →</span>
+    </a>
+
+    <a href="tabledashboard.html" class="action-card">
+      <div class="action-icon">✎</div>
+      <h2>Update Data</h2>
+      <p>Load or update crew data for each lobby and category. Pick a lobby, then any category.</p>
+      <span class="cta">Open dashboard →</span>
+    </a>
+  </div>
+
+  <div class="foot">
+    NGP Division · Crew Management System
+  </div>
+</div>
+</body>
+</html>

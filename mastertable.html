@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NGP Division Staff Position</title>
+<style>
+  * { box-sizing: border-box; }
+  :root {
+    --green: #4e8b65; --green-dark: #286044; --green-pale: #edf5ef;
+    --ink: #26332c; --muted: #6b776f; --line: #d9e1db;
+    --paper: #ffffff; --canvas: #f3f6f3; --yellow: #fff4bd; --red: #c0392b;
+  }
+  body { margin: 0; background: var(--canvas); color: var(--ink);
+         font-family: "Segoe UI", Arial, sans-serif; font-size: 13px; }
+  .page { max-width: 1800px; margin: 0 auto; padding: 26px 24px 20px; }
+
+  .page-header { display: flex; justify-content: space-between; align-items: end;
+                 gap: 20px; padding: 4px 2px 22px; border-bottom: 1px solid var(--line);
+                 margin-bottom: 18px; }
+  .eyebrow { margin: 0 0 7px; color: var(--green-dark); font-size: 10px;
+             font-weight: 800; letter-spacing: 2px; }
+  h1 { margin: 0; font-size: clamp(23px, 3vw, 32px); letter-spacing: -.7px;
+       font-weight: 700; }
+  .subtitle { color: var(--muted); margin: 6px 0 0; }
+  .report-date { display: grid; gap: 6px; color: var(--muted); font-size: 11px;
+                 font-weight: 600; }
+  .report-date input { border: 1px solid var(--line); border-radius: 7px;
+                       padding: 8px 10px; background: white; color: var(--ink);
+                       font-family: inherit; }
+
+  .toolbar { display: flex; justify-content: space-between; align-items: center;
+             gap: 12px; padding: 12px 14px; background: white;
+             border: 1px solid var(--line); border-radius: 10px; margin-bottom: 12px; }
+  .status { display: flex; align-items: center; gap: 8px; color: var(--muted);
+            font-weight: 600; white-space: nowrap; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #8a9b8f; }
+  .status.editing .status-dot { background: #d28a22; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+  .btn { border: 1px solid transparent; border-radius: 7px; padding: 8px 12px;
+         font: inherit; font-weight: 650; cursor: pointer; transition: .15s ease; }
+  .btn:hover { transform: translateY(-1px); filter: brightness(.97); }
+  .btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+  .btn-primary { background: var(--green-dark); color: white; }
+  .btn-success { background: #28764b; color: white; }
+  .btn-light   { background: #f7f9f7; color: #425047; border-color: var(--line); }
+  .btn-dark    { background: #34443a; color: white; }
+
+  .lobby-strip { display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+                 padding: 10px 14px; background: #fff; border: 1px solid var(--line);
+                 border-radius: 10px; margin-bottom: 16px; font-size: 11px; }
+  .lobby-strip .strip-label { color: var(--muted); font-weight: 700;
+                              margin-right: 4px; letter-spacing: .5px; }
+  .lobby-chip { padding: 4px 10px; border-radius: 12px; font-weight: 700;
+                font-size: 10.5px; letter-spacing: .3px; }
+  .lobby-chip.empty  { background: #f3f3f0; color: #8a8a80; }
+  .lobby-chip.partial{ background: #fff4bd; color: #7a5a12; }
+  .lobby-chip.loaded { background: var(--green-pale); color: var(--green-dark); }
+
+  .report-card { background: var(--paper); border: 1px solid var(--line);
+                 border-radius: 11px; overflow: hidden; margin-bottom: 17px;
+                 box-shadow: 0 2px 8px rgba(28,55,37,.035); }
+  .table-heading { display: flex; justify-content: space-between; align-items: center;
+                   gap: 12px; padding: 16px 18px 13px; }
+  .table-heading h2 { margin: 0; font-size: 15px; font-weight: 700; }
+  .table-heading p  { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
+  .record-count, .summary-tag { color: var(--green-dark); background: var(--green-pale);
+                                border-radius: 20px; padding: 6px 10px; font-size: 10px;
+                                font-weight: 800; white-space: nowrap; }
+
+  .table-wrap { overflow: auto; width: 100%; border-top: 1px solid var(--line); }
+  table { border-collapse: separate; border-spacing: 0; width: max-content;
+          min-width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { border-right: 1px solid #e0e6e1; border-bottom: 1px solid #e0e6e1;
+           padding: 7px 8px; text-align: center; white-space: nowrap; min-width: 58px; }
+  th { position: sticky; top: 0; z-index: 2; background: #e8f0e9; color: #294b35;
+       font-size: 10px; font-weight: 800; line-height: 1.25; letter-spacing: .15px;
+       min-width: 66px; }
+  th:first-child, td:first-child { min-width: 88px; }
+  th:nth-child(2), td:nth-child(2) { min-width: 68px; }
+  th:nth-child(1), th:nth-child(2) { background: #dce9de; }
+  td { background: white; font-size: 11px; }
+  tbody tr:hover td { background-color: #f7faf7; }
+  td.lobby-cell { color: #315d40; background: #f1f6f1; font-weight: 800;
+                  letter-spacing: .2px; }
+  td.designation { font-weight: 700; color: #34483a; }
+  td.vacancy { color: var(--red); font-weight: 700; }
+  td.percent { color: var(--red); font-weight: 800; }
+  tr.total-row td { background: var(--yellow) !important; font-weight: 800;
+                    border-top: 1px solid #d9c66b; }
+  tr.lobby-start td { border-top: 2px solid #cbd8cd; }
+  tr.summary-row td { background: #fbfcfb; }
+  td[contenteditable="true"] { background: #fffdf0 !important;
+    outline: 2px solid #d4a83c; outline-offset: -2px; cursor: text; min-width: 65px; }
+  td[contenteditable="true"]:focus { background: #fff8d9 !important;
+    outline: 2px solid #b7831c; }
+
+  td.online-count { color: #1e5a37; font-weight: 800; cursor: pointer;
+    background: #eef7f0 !important; text-decoration: underline dotted;
+    text-underline-offset: 3px; }
+  td.online-count:hover { background: #d9ecdc !important; text-decoration: underline; }
+
+  .table-note { padding: 10px 16px; color: var(--muted); font-size: 10px; }
+  .summary-card th { background: #e8f0e9; }
+  footer { color: #87928a; font-size: 10px; display: flex;
+           justify-content: space-between; padding: 4px 2px 12px; }
+
+  .toast { position: fixed; right: 22px; bottom: 22px; background: #263b2d;
+           color: white; padding: 11px 15px; border-radius: 8px; opacity: 0;
+           transform: translateY(8px); pointer-events: none; transition: .2s;
+           box-shadow: 0 5px 20px #0002; z-index: 50; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  .crew-popup-overlay { position: fixed; inset: 0; background: rgba(20,35,25,.45);
+    display: none; align-items: center; justify-content: center; z-index: 1000;
+    padding: 20px; }
+  .crew-popup-overlay.show { display: flex; }
+  .crew-popup-box { background: #fff; border-radius: 10px; max-width: 95vw;
+    max-height: 88vh; display: flex; flex-direction: column; width: 1100px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+  .crew-popup-head { display: flex; justify-content: space-between;
+    align-items: flex-start; gap: 12px; padding: 14px 18px;
+    border-bottom: 1px solid var(--line); }
+  .crew-popup-head h3 { margin: 0; font-size: 15px; color: var(--ink); }
+  .crew-popup-head p  { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+  .crew-popup-close { border: none; background: transparent; font-size: 26px;
+    line-height: 1; cursor: pointer; color: var(--muted); padding: 0 6px; }
+  .crew-popup-close:hover { color: var(--red); }
+  .crew-popup-body { padding: 14px 18px; overflow: auto; }
+  .crew-popup-empty { color: var(--muted); text-align: center; padding: 20px; }
+  .crew-popup-table-wrap { overflow: auto; max-height: 60vh; }
+  .crew-popup-table { width: 100%; border-collapse: collapse; font-size: 12px;
+    min-width: 0; }
+  .crew-popup-table th { position: sticky; top: 0; background: #e8f0e9;
+    color: #294b35; font-size: 10px; font-weight: 800; padding: 7px 9px;
+    text-align: left; white-space: nowrap; border-bottom: 1px solid var(--line);
+    min-width: 0; }
+  .crew-popup-table td { padding: 6px 9px; border-bottom: 1px solid #edf1ee;
+    white-space: nowrap; color: var(--ink); text-align: left; min-width: 0;
+    font-size: 12px; }
+  .crew-popup-table tbody tr:hover td { background: #f7faf7; }
+  .crew-popup-table td.lobby-tag { font-weight: 800; color: var(--green-dark); }
+
+  @media (max-width: 700px) {
+    .page { padding: 16px 10px; }
+    .page-header, .toolbar { align-items: flex-start; flex-direction: column; }
+    .actions { justify-content: flex-start; }
+    .report-date { width: 100%; }
+  }
+  @media print {
+    @page { size: A3 landscape; margin: 8mm; }
+    body { background: white; font-size: 9px; }
+    .page { max-width: none; padding: 0; }
+    .page-header { padding: 0 0 10px; margin-bottom: 8px; }
+    .toolbar, .lobby-strip, .table-note, footer, .toast, .crew-popup-overlay {
+      display: none !important; }
+    .report-card { box-shadow: none; border: 0; margin-bottom: 10px;
+                   break-inside: avoid; }
+    .table-heading { padding: 5px 0; }
+    .table-wrap { overflow: visible; }
+    table { width: 100%; min-width: 0; table-layout: auto; }
+    th, td { min-width: 0 !important; padding: 4px 3px; font-size: 7px;
+             white-space: normal; }
+    th { position: static; }
+    .summary-card { break-before: page; }
+  }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">NAGPUR DIVISION</p>
+      <h1>Staff Position Report</h1>
+      <p class="subtitle">Lobby-wise staff availability and deployment</p>
+    </div>
+    <div class="report-date">
+      <label for="reportDate">Report date</label>
+      <input id="reportDate" type="date" value="2026-11-19" disabled>
+    </div>
+  </header>
+
+  <section class="toolbar" aria-label="Table controls">
+    <div class="status" id="modeStatus">
+      <span class="status-dot"></span> View only
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" id="editBtn" type="button">Edit Table</button>
+      <button class="btn btn-success" id="saveBtn" type="button" hidden>Save Changes</button>
+      <button class="btn btn-light" id="cancelBtn" type="button" hidden>Cancel</button>
+      <button class="btn btn-light" id="resetBtn" type="button">Reset Original</button>
+      <button class="btn btn-light" id="csvBtn" type="button">Export CSV</button>
+      <button class="btn btn-dark" id="printBtn" type="button">Print / PDF</button>
+    </div>
+  </section>
+
+  <div class="lobby-strip" id="lobbyStrip">
+    <span class="strip-label">Lobbies:</span>
+  </div>
+
+  <section class="report-card">
+    <div class="table-heading">
+      <div>
+        <h2>NGP Division Staff Position</h2>
+        <p>All figures are displayed as entered in the source spreadsheet.</p>
+      </div>
+      <span class="record-count" id="recordCount"></span>
+    </div>
+    <div class="table-wrap" id="mainTableWrap">
+      <table id="staffTable">
+        <thead><tr id="mainHead"></tr></thead>
+        <tbody id="mainBody"></tbody>
+      </table>
+    </div>
+    <div class="table-note">
+      Scroll horizontally to view all columns. Click <b>Edit Table</b> to modify values.
+      Any cell in a category that has crew data is clickable — click to see crew details.
+    </div>
+  </section>
+
+  <section class="report-card summary-card">
+    <div class="table-heading">
+      <div>
+        <h2>Designation-wise Summary</h2>
+        <p>Consolidated figures from the bottom summary of your spreadsheet.</p>
+      </div>
+      <span class="summary-tag">SUMMARY</span>
+    </div>
+    <div class="table-wrap">
+      <table id="summaryTable">
+        <thead><tr id="summaryHead"></tr></thead>
+        <tbody id="summaryBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <span>NGP Division · Staff Position Report</span>
+    <span id="footerDate"></span>
+  </footer>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script type="module">
+  import { db } from './firebase-init.js';
+  import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+  (function () {
+    "use strict";
+
+    var columns = [
+      "LOBBY","DESIG","SS","MOR","VAC","ON / LINE","REST","AVL FOR NEXT DAY","GOC",
+      "TOTAL EFFECTIVE","SPL DUTY","INST BSL","L/R","MISC (TA/ENQ/SUS)","TRG BSL",
+      "LEAVE","SPL CL","SICK","ABSENT","DTC AJNI","PME","S/N POST","NON RUN TOTAL","% OF NON-RUN"
+    ];
+
+    var originalRows = [
+      ["NGP + GNQ","LPM","182","129","53","","0","129","","129","","","","","","","","","","","","","0","0.00%"],
+      ["NGP + GNQ","LPP","6","33","-27","","","33","","33","","","","","","","","","","","","","0","0.00%"],
+      ["NGP + GNQ","LPG","575","324","251","","","324","","324","","","","","","","","","","","","","0","0.00%"],
+      ["NGP + GNQ","LPS","87","83","4","","","83","","83","","","","","","","","","","","","","0","0.00%"],
+      ["NGP + GNQ","ALP","775","543","232","","","543","","543","","","","","","","","","","","","","0","0.00%"],
+      ["AMLA+JNO","LPM","18","9","9","","","9","","9","","","","","","","","","","","","","0","0.00%"],
+      ["AMLA+JNO","LPP","15","22","-7","","","22","","22","","","","","","","","","","","","","0","0.00%"],
+      ["AMLA+JNO","LPG","194","114","80","","","114","","114","","","","","","","","","","","","","0","0.00%"],
+      ["AMLA+JNO","LPS","5","8","-3","","","8","","8","","","","","","","","","","","","","0","0.00%"],
+      ["AMLA+JNO","ALP","218","147","71","","","147","","147","","","","","","","","","","","","","0","0.00%"],
+      ["DHQ","LPG","12","11","1","","","11","","11","","","","","","","","","","","","","0","0.00%"],
+      ["DHQ","ALP","12","11","1","","","11","","11","","","","","","","","","","","","","0","0.00%"],
+      ["TEO","LPG","12","11","1","","","11","","11","","","","","","","","","","","","","0","0.00%"],
+      ["TEO","ALP","12","12","0","","","12","","12","","","","","","","","","","","","","0","0.00%"],
+      ["BPQ","LPM","4","3","1","","","3","","3","","","","","","","","","","","","","0","0.00%"],
+      ["BPQ","LPP","4","3","1","","","3","","3","","","","","","","","","","","","","0","0.00%"],
+      ["BPQ","LPG","308","207","101","","","207","","207","","","","","","","","","","","","","0","0.00%"],
+      ["BPQ","LPS","16","22","-6","","","22","","22","","","","","","","","","","","","","0","0.00%"],
+      ["BPQ","ALP","321","214","107","","","214","","214","","","","","","","","","","","","","0","0.00%"],
+      ["GGS","LPS","7","11","-4","","","11","","11","","","","","","","","","","","","","0","0.00%"],
+      ["TAE","LPG","42","35","7","","","35","","35","","","","","","","","","","","","","0","0.00%"],
+      ["TAE","ALP","42","32","10","","","32","","32","","","","","","","","","","","","","0","0.00%"],
+      ["MJRI","LPG","43","35","8","","","35","","35","","","","","","","","","","","","","0","0.00%"],
+      ["MJRI","ALP","43","34","9","","","34","","34","","","","","","","","","","","","","0","0.00%"],
+      ["MJRI","LPS","3","3","0","","","3","","3","","","","","","","","","","","","","0","0.00%"],
+      ["WR","LPP","9","7","2","","","7","","7","","","","","","","","","","","","","0","0.00%"],
+      ["WR","LPG","44","20","24","","","20","","20","","","","","","","","","","","","","0","0.00%"],
+      ["WR","ALP","48","26","22","","","26","","26","","","","","","","","","","","","","0","0.00%"],
+      ["BTBR","LPG","18","13","5","","","13","","13","","","","","","","","","","","","","0","0.00%"],
+      ["BTBR","ALP","18","11","7","","","11","","11","","","","","","","","","","","","","0","0.00%"],
+      ["BTBR","LPS","4","1","3","","","1","","1","","","","","","","","","","","","","0","0.00%"],
+      ["T/W","LP/TW","18","23","-5","","","21","","21","","","","","1","","","1","","","","","2","8.70%"]
+    ];
+
+    var summaryRows = [
+      ["TOTAL","","3115","2157","958","0","0","2155","0","2155","0","0","0","0","1","0","0","1","0","0","0","0","2","0.09%"],
+      ["","LPM","204","141","63","0","0","141","0","141","0","0","0","0","0","0","0","0","0","0","0","0","0","0.00%"],
+      ["","LPP","34","65","-31","0","0","65","0","65","0","0","0","0","0","0","0","0","0","0","0","0","0","0.00%"],
+      ["","LPG","1248","770","478","0","0","770","0","770","0","0","0","0","0","0","0","0","0","0","0","0","0","0.00%"],
+      ["","LPS","122","128","-6","0","0","128","0","128","0","0","0","0","0","0","0%","0","0","0","0","0","0","0.00%"],
+      ["","ALP","1489","1030","459","0","0","1030","0","1030","0","0","0","0","0","0","0","0","0","0","0","0","0","0.00%"],
+      ["","LP/TW","18","23","-5","","","21","","21","","","","","1","","","1","","","","","2","8.70%"],
+      ["TOTAL","","3115","2157","958","0","0","2155","0","2155","0","0","0","0","1","0","0","1","0","0","0","0","2","0.09%"]
+    ];
+
+    /* ---------- Lobby + Column maps ---------- */
+    var LOBBY_KEYS = {
+      "NGP + GNQ": "NGP_GNQ", "AMLA+JNO": "AMLA_JNO", "DHQ": "DHQ", "TEO": "TEO",
+      "BPQ": "BPQ", "GGS": "GGS", "TAE": "TAE", "MJRI": "MJRI",
+      "WR": "WR", "BTBR": "BTBR"
+    };
+
+    var COLUMN_MAP = {
+      ONLINE:  5,   REST:    6,   GOC:     8,   SPLDUTY: 10, INSTBSL: 11,
+      LR:      12,  MISC:    13,  TRGBSL:  14,  LEAVE:   15, SPLCL:   16,
+      SICK:    17,  ABSENT:  18,  DTCAJNI: 19,  PME:     20, SNPOST:  21
+    };
+    var COLUMN_TITLES = {
+      ONLINE: "ON / LINE", REST: "REST", GOC: "GOC", SPLDUTY: "SPL DUTY",
+      INSTBSL: "INST BSL", LR: "L/R", MISC: "MISC (TA/ENQ/SUS)", TRGBSL: "TRG BSL",
+      LEAVE: "LEAVE", SPLCL: "SPL CL", SICK: "SICK", ABSENT: "ABSENT",
+      DTCAJNI: "DTC AJNI", PME: "PME", SNPOST: "S/N POST"
+    };
+    var COLUMN_KEYS_ORDER = Object.keys(COLUMN_MAP);   // 15 categories
+
+    var DESIG_COL      = 1;
+    var CREW_DESIG_COL = 3;
+    var TARGET_DESIGS  = ["LPM","LPP","LPG","LPS","ALP"];
+    var DESIG_TITLES = {
+      LPM: "Loco Pilot Mail/Express", LPP: "Loco Pilot Passenger",
+      LPG: "Loco Pilot Goods", LPS: "Loco Pilot Shunter", ALP: "Asst Loco Pilot"
+    };
+    var CREW_HEADERS = [
+      "SNO.","CREW ID","CREW NAME","CREW DESIGNATION","FORTNIGHT Hrs",
+      "AVAIL TIME","SIGN ON","TRAIN NO","FROM STTN","TO STTN","SIGNON SINCE"
+    ];
+
+    var rows = JSON.parse(JSON.stringify(originalRows));
+    var summaries = JSON.parse(JSON.stringify(summaryRows));
+    var editing = false;
+    var snapshot = null;
+    var mainBody    = document.getElementById("mainBody");
+    var summaryBody = document.getElementById("summaryBody");
+    var modeStatus  = document.getElementById("modeStatus");
+
+    function escapeHtml(v) {
+      return String(v == null ? "" : v).replace(/[&<>"']/g, function (c) {
+        return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+      });
+    }
+    function addHeaders(target) {
+      target.innerHTML = columns.map(function (c) {
+        return "<th>" + escapeHtml(c) + "</th>";
+      }).join("");
+    }
+
+    /* ---------- Crew data helpers (FIREBASE) ---------- */
+    let ALL_CLOUD_DATA = {}; // Holds all data from Firebase
+
+    function readCategoryCrew(lobbyKey, category) {
+      if (ALL_CLOUD_DATA[lobbyKey] && ALL_CLOUD_DATA[lobbyKey][category]) {
+        return ALL_CLOUD_DATA[lobbyKey][category];
+      }
+      return null;
+    }
+
+    function categorizeCrewDesignation(designation) {
+      if (designation == null) return null;
+      var d = String(designation).toUpperCase().replace(/[.\s]+/g, " ").trim();
+      if (TARGET_DESIGS.indexOf(d) !== -1) return d;
+      if (d.indexOf("LOCO PILOT") !== -1) {
+        if (d.indexOf("MAIL") !== -1) return "LPM";
+        if (d.indexOf("PASSENGER") !== -1 || d.indexOf("PASS") !== -1) return "LPP";
+        if (d.indexOf("GOODS") !== -1 || d.indexOf("GDS") !== -1) return "LPG";
+        if (d.indexOf("SHUNTER") !== -1) return "LPS";
+      }
+      if (d.indexOf("ASST LOCO PILOT") !== -1 || d.indexOf("SR ASST LOCO PILOT") !== -1) return "ALP";
+      return null;
+    }
+
+    // { [lobby]: { [category]: { LPM: n, LPP: n, ... } } }
+    function computeAllCounts() {
+      var result = {};
+      Object.keys(LOBBY_KEYS).forEach(function (lobby) {
+        var lobbyKey = LOBBY_KEYS[lobby];
+        var lobbyResult = {};
+        COLUMN_KEYS_ORDER.forEach(function (cat) {
+          var crew = readCategoryCrew(lobbyKey, cat);
+          if (crew === null) return;
+          var counts = { LPM: 0, LPP: 0, LPG: 0, LPS: 0, ALP: 0 };
+          crew.forEach(function (row) {
+            var d = categorizeCrewDesignation(row[CREW_DESIG_COL]);
+            if (d) counts[d]++;
+          });
+          lobbyResult[cat] = counts;
+        });
+        if (Object.keys(lobbyResult).length) result[lobby] = lobbyResult;
+      });
+      return result;
+    }
+
+    function hasAnyLobbyCategoryData(counts, category) {
+      return Object.keys(counts).some(function (l) {
+        return counts[l][category] !== undefined;
+      });
+    }
+
+    function hasDataForLobbyCategory(lobbyKey, category) {
+      return readCategoryCrew(lobbyKey, category) !== null;
+    }
+    function hasDataForCategory(category) {
+      return Object.keys(LOBBY_KEYS).some(function (l) {
+        return readCategoryCrew(LOBBY_KEYS[l], category) !== null;
+      });
+    }
+
+    function getCategoryForColumn(colIndex) {
+      var result = null;
+      COLUMN_KEYS_ORDER.forEach(function (cat) {
+        if (COLUMN_MAP[cat] === colIndex) result = cat;
+      });
+      return result;
+    }
+
+    function sumAcrossLobbies(counts, category, desig) {
+      var total = 0;
+      Object.keys(counts).forEach(function (l) {
+        if (counts[l][category]) total += (counts[l][category][desig] || 0);
+      });
+      return total;
+    }
+    function sumAllCategoriesAllLobbies(counts, category) {
+      var total = 0;
+      Object.keys(counts).forEach(function (l) {
+        if (counts[l][category]) {
+          Object.keys(counts[l][category]).forEach(function (d) {
+            total += counts[l][category][d];
+          });
+        }
+      });
+      return total;
+    }
+
+    function applyCategoryCounts() {
+      var counts = computeAllCounts();
+      if (!Object.keys(counts).length) return;
+
+      rows.forEach(function (row) {
+        var lobby = String(row[0] || "").trim();
+        var desig = String(row[DESIG_COL] || "").toUpperCase().trim();
+        var isTotal = (lobby === "TOTAL");
+
+        COLUMN_KEYS_ORDER.forEach(function (cat) {
+          var col = COLUMN_MAP[cat];
+          if (isTotal) {
+            if (hasAnyLobbyCategoryData(counts, cat)) {
+              row[col] = String(sumAllCategoriesAllLobbies(counts, cat));
+            }
+            return;
+          }
+          if (!LOBBY_KEYS.hasOwnProperty(lobby)) return;
+          if (!counts[lobby] || !counts[lobby][cat]) return;
+          if (TARGET_DESIGS.indexOf(desig) === -1) return;
+          row[col] = String(counts[lobby][cat][desig] || 0);
+        });
+      });
+
+      summaries.forEach(function (row) {
+        var lobby = String(row[0] || "").trim();
+        var desig = String(row[DESIG_COL] || "").toUpperCase().trim();
+        var isTotal = (lobby === "TOTAL");
+
+        COLUMN_KEYS_ORDER.forEach(function (cat) {
+          var col = COLUMN_MAP[cat];
+          if (isTotal) {
+            if (hasAnyLobbyCategoryData(counts, cat)) {
+              row[col] = String(sumAllCategoriesAllLobbies(counts, cat));
+            }
+            return;
+          }
+          if (TARGET_DESIGS.indexOf(desig) === -1) return;
+          if (!hasAnyLobbyCategoryData(counts, cat)) return;
+          row[col] = String(sumAcrossLobbies(counts, cat, desig));
+        });
+      });
+    }
+
+    /* ---------- Popup ---------- */
+    var popupEl = null;
+    function ensurePopup() {
+      if (popupEl) return popupEl;
+      popupEl = document.createElement("div");
+      popupEl.id = "crewPopup";
+      popupEl.className = "crew-popup-overlay";
+      popupEl.innerHTML =
+        '<div class="crew-popup-box" role="dialog" aria-modal="true">' +
+          '<div class="crew-popup-head">' +
+            '<div>' +
+              '<h3 id="crewPopupTitle">Crew Details</h3>' +
+              '<p id="crewPopupSubtitle"></p>' +
+            '</div>' +
+            '<button type="button" class="crew-popup-close" id="crewPopupClose" aria-label="Close">&times;</button>' +
+          '</div>' +
+          '<div class="crew-popup-body" id="crewPopupBody"></div>' +
+        '</div>';
+      document.body.appendChild(popupEl);
+      popupEl.addEventListener("click", function (e) {
+        if (e.target === popupEl) hidePopup();
+      });
+      document.getElementById("crewPopupClose").addEventListener("click", hidePopup);
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") hidePopup();
+      });
+      return popupEl;
+    }
+    function hidePopup() { if (popupEl) popupEl.classList.remove("show"); }
+
+    function showCrewPopup(designation, lobbyName, category) {
+      ensurePopup();
+
+      var rowsToShow = [];
+
+      function addFromLobby(lobby) {
+        var crew = readCategoryCrew(LOBBY_KEYS[lobby], category);
+        if (!crew) return;
+        crew.forEach(function (row) {
+          var cat = categorizeCrewDesignation(row[CREW_DESIG_COL]);
+          if (designation && cat !== designation) return;
+          rowsToShow.push({ lobby: lobby, data: row });
+        });
+      }
+
+      if (lobbyName) addFromLobby(lobbyName);
+      else Object.keys(LOBBY_KEYS).forEach(addFromLobby);
+
+      var catLabel = COLUMN_TITLES[category] || category;
+      var title = catLabel;
+      if (designation) title += " \u2014 " + (DESIG_TITLES[designation] || designation);
+      else title += " \u2014 All designations";
+      title += " \u00b7 " + (lobbyName || "All lobbies");
+      document.getElementById("crewPopupTitle").textContent = title;
+      document.getElementById("crewPopupSubtitle").textContent =
+        rowsToShow.length + " crew record" + (rowsToShow.length === 1 ? "" : "s");
+
+      var body = document.getElementById("crewPopupBody");
+      if (!rowsToShow.length) {
+        body.innerHTML = '<p class="crew-popup-empty">No crew for this ' +
+          escapeHtml(catLabel) + ' selection.</p>';
+        popupEl.classList.add("show");
+        return;
+      }
+
+      var showLobbyCol = !lobbyName;
+      var html = '<div class="crew-popup-table-wrap"><table class="crew-popup-table"><thead><tr>';
+      if (showLobbyCol) html += "<th>LOBBY</th>";
+      CREW_HEADERS.forEach(function (h) { html += "<th>" + escapeHtml(h) + "</th>"; });
+      html += "</tr></thead><tbody>";
+      rowsToShow.forEach(function (item) {
+        html += "<tr>";
+        if (showLobbyCol) html += '<td class="lobby-tag">' + escapeHtml(item.lobby) + "</td>";
+        for (var i = 0; i < CREW_HEADERS.length; i++) {
+          html += "<td>" + escapeHtml(item.data[i]) + "</td>";
+        }
+        html += "</tr>";
+      });
+      html += "</tbody></table></div>";
+      body.innerHTML = html;
+      popupEl.classList.add("show");
+    }
+
+    /* ---------- Render ---------- */
+    function renderTable(body, data, isSummary) {
+      body.innerHTML = "";
+      var previousLobby = null;
+
+      data.forEach(function (row, ri) {
+        var tr = document.createElement("tr");
+        if (row[0] === "TOTAL") tr.classList.add("total-row");
+        if (isSummary && row[0] !== "TOTAL") tr.classList.add("summary-row");
+        if (!isSummary && row[0] !== previousLobby) tr.classList.add("lobby-start");
+
+        var lobby = String(row[0] || "").trim();
+        var desig = String(row[DESIG_COL] || "").toUpperCase().trim();
+        var isTotal = (lobby === "TOTAL");
+        var lobbyKey = LOBBY_KEYS[lobby] || null;
+
+        row.forEach(function (value, ci) {
+          var td = document.createElement("td");
+          td.textContent = value;
+          if (ci === 0 && value) td.classList.add("lobby-cell");
+          if (ci === 1) td.classList.add("designation");
+          if (ci === 4) td.classList.add("vacancy");
+          if (ci === 23) td.classList.add("percent");
+
+          var category = getCategoryForColumn(ci);
+          var clickInfo = null;
+
+          if (category) {
+            if (isTotal) {
+              if (hasDataForCategory(category)) {
+                clickInfo = { category: category, lobby: null, desig: null };
+              }
+            } else if (isSummary) {
+              if (TARGET_DESIGS.indexOf(desig) !== -1 && hasDataForCategory(category)) {
+                clickInfo = { category: category, lobby: null, desig: desig };
+              }
+            } else if (lobbyKey && TARGET_DESIGS.indexOf(desig) !== -1) {
+              if (hasDataForLobbyCategory(lobbyKey, category)) {
+                clickInfo = { category: category, lobby: lobby, desig: desig };
+              }
+            }
+          }
+
+          if (clickInfo) {
+            td.classList.add("online-count");
+            td.title = "Click to view " + (COLUMN_TITLES[clickInfo.category] || clickInfo.category) + " crew";
+            td.addEventListener("click", (function (info) {
+              return function () { showCrewPopup(info.desig, info.lobby, info.category); };
+            })(clickInfo));
+          }
+
+          if (editing && !(isTotal && ci === 0) && !clickInfo) {
+            td.contentEditable = "true";
+            td.spellcheck = false;
+            td.dataset.row = ri;
+            td.dataset.col = ci;
+          }
+          tr.appendChild(td);
+        });
+        body.appendChild(tr);
+        if (!isSummary) previousLobby = row[0];
+      });
+    }
+
+    function renderLobbyStrip() {
+      var strip = document.getElementById("lobbyStrip");
+      strip.innerHTML = '<span class="strip-label">Lobbies:</span>';
+      var totalCats = COLUMN_KEYS_ORDER.length;
+
+      Object.keys(LOBBY_KEYS).forEach(function (lobby) {
+        var loadedCats = 0, totalCrew = 0;
+        COLUMN_KEYS_ORDER.forEach(function (cat) {
+          var crew = readCategoryCrew(LOBBY_KEYS[lobby], cat);
+          if (crew !== null) { loadedCats++; totalCrew += crew.length; }
+        });
+
+        var chip = document.createElement("span");
+        var statusClass = loadedCats === 0 ? "empty" :
+                          (loadedCats === totalCats ? "loaded" : "partial");
+        chip.className = "lobby-chip " + statusClass;
+        chip.textContent = lobby + " · " + loadedCats + "/" + totalCats + " · " + totalCrew + " crew";
+        chip.title = loadedCats === 0
+          ? "No category data loaded yet for " + lobby
+          : loadedCats + " of " + totalCats + " categories loaded for " + lobby;
+        strip.appendChild(chip);
+      });
+    }
+
+    function renderAll() {
+      applyCategoryCounts();
+      addHeaders(document.getElementById("mainHead"));
+      addHeaders(document.getElementById("summaryHead"));
+      renderTable(mainBody, rows, false);
+      renderTable(summaryBody, summaries, true);
+      renderLobbyStrip();
+
+      var loadedLobbies = 0, loadedCats = 0, totalCrew = 0;
+      Object.keys(LOBBY_KEYS).forEach(function (l) {
+        var lobbyHas = 0;
+        COLUMN_KEYS_ORDER.forEach(function (cat) {
+          var crew = readCategoryCrew(LOBBY_KEYS[l], cat);
+          if (crew !== null) { lobbyHas++; loadedCats++; totalCrew += crew.length; }
+        });
+        if (lobbyHas > 0) loadedLobbies++;
+      });
+      var maxLobbies = Object.keys(LOBBY_KEYS).length;
+      var maxSheets  = maxLobbies * COLUMN_KEYS_ORDER.length;
+
+      document.getElementById("recordCount").textContent =
+        rows.length + " lobby entries · " +
+        loadedLobbies + "/" + maxLobbies + " lobbies · " +
+        loadedCats + "/" + maxSheets + " sheets · " +
+        totalCrew + " crew";
+    }
+
+    function setEditing(value) {
+      editing = value;
+      document.getElementById("editBtn").hidden    = value;
+      document.getElementById("saveBtn").hidden    = !value;
+      document.getElementById("cancelBtn").hidden  = !value;
+      document.getElementById("resetBtn").disabled = value;
+      document.getElementById("csvBtn").disabled   = value;
+      document.getElementById("reportDate").disabled = value;
+      modeStatus.classList.toggle("editing", value);
+      modeStatus.innerHTML = '<span class="status-dot"></span> ' +
+        (value ? "Edit mode \u2014 changes not yet saved" : "View only");
+      renderAll();
+    }
+
+    function showToast(message) {
+      var toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(function () { toast.classList.remove("show"); }, 2400);
+    }
+
+    function readEditedValues() {
+      document.querySelectorAll("#mainBody td[contenteditable='true']").forEach(function (td) {
+        rows[Number(td.dataset.row)][Number(td.dataset.col)] = td.innerText.trim();
+      });
+      document.querySelectorAll("#summaryBody td[contenteditable='true']").forEach(function (td) {
+        summaries[Number(td.dataset.row)][Number(td.dataset.col)] = td.innerText.trim();
+      });
+    }
+
+    /* ---------- Events ---------- */
+    document.getElementById("editBtn").addEventListener("click", function () {
+      snapshot = {
+        rows: JSON.parse(JSON.stringify(rows)),
+        summaries: JSON.parse(JSON.stringify(summaries))
+      };
+      setEditing(true);
+    });
+
+    document.getElementById("saveBtn").addEventListener("click", function () {
+      readEditedValues();
+      localStorage.setItem("ngpStaffPositionRows", JSON.stringify(rows));
+      localStorage.setItem("ngpStaffPositionSummary", JSON.stringify(summaries));
+      setEditing(false);
+      snapshot = null;
+      showToast("Changes saved in this browser.");
+    });
+
+    document.getElementById("cancelBtn").addEventListener("click", function () {
+      if (snapshot) { rows = snapshot.rows; summaries = snapshot.summaries; }
+      snapshot = null;
+      setEditing(false);
+      showToast("Unsaved changes discarded.");
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", function () {
+      if (!confirm("Restore the original figures? This will replace saved browser changes.")) return;
+      rows = JSON.parse(JSON.stringify(originalRows));
+      summaries = JSON.parse(JSON.stringify(summaryRows));
+      localStorage.removeItem("ngpStaffPositionRows");
+      localStorage.removeItem("ngpStaffPositionSummary");
+      renderAll();
+      showToast("Original figures restored.");
+    });
+
+    document.getElementById("printBtn").addEventListener("click", function () {
+      window.print();
+    });
+
+    document.getElementById("csvBtn").addEventListener("click", function () {
+      var all = [columns].concat(rows).concat(summaries);
+      var csv = all.map(function (row) {
+        return row.map(function (v) {
+          return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
+        }).join(",");
+      }).join("\r\n");
+      var blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      var link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "NGP_Division_Staff_Position.csv";
+      link.click();
+      URL.revokeObjectURL(link.href);
+    });
+
+    /* ---------- Init ---------- */
+    function loadSaved() {
+      try {
+        var r = localStorage.getItem("ngpStaffPositionRows");
+        var s = localStorage.getItem("ngpStaffPositionSummary");
+        if (r) rows = JSON.parse(r);
+        if (s) summaries = JSON.parse(s);
+      } catch (e) {}
+    }
+
+    // Set up the live listener
+    const dbRef = ref(db, 'crewData/');
+    onValue(dbRef, (snapshot) => {
+      ALL_CLOUD_DATA = snapshot.val() || {};
+      renderAll(); // Re-render when cloud data changes
+    });
+
+    // Load manual edits and render initial table skeleton
+    loadSaved();
+    renderAll();
+
+    var dateInput = document.getElementById("reportDate");
+    function updateDateLabel() {
+      var d = dateInput.value ? new Date(dateInput.value + "T00:00:00") : null;
+      document.getElementById("footerDate").textContent = d
+        ? d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+        : "";
+    }
+    dateInput.addEventListener("change", updateDateLabel);
+    updateDateLabel();
+  })();
+</script>
+</body>
+</html>
