@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ON/LINE Crew</title>
+<style>
+  * { box-sizing: border-box; }
+  :root {
+    --green: #4e8b65; --green-dark: #286044; --green-pale: #edf5ef;
+    --ink: #26332c; --muted: #6b776f; --line: #d9e1db;
+    --paper: #ffffff; --canvas: #f3f6f3; --red: #c0392b;
+  }
+  body { margin: 0; background: var(--canvas); color: var(--ink);
+         font-family: "Segoe UI", Arial, sans-serif; font-size: 13px; }
+  .page { max-width: 1400px; margin: 0 auto; padding: 26px 24px 20px; }
+
+  .page-header { display: flex; justify-content: space-between; align-items: end;
+                 gap: 20px; padding: 4px 2px 22px; border-bottom: 1px solid var(--line);
+                 margin-bottom: 18px; }
+  .eyebrow { margin: 0 0 7px; color: var(--green-dark); font-size: 10px;
+             font-weight: 800; letter-spacing: 2px; }
+  h1 { margin: 0; font-size: clamp(22px, 2.6vw, 28px); letter-spacing: -.5px;
+       font-weight: 700; }
+  .subtitle { color: var(--muted); margin: 6px 0 0; }
+  .lobby-badge { display: inline-block; background: var(--green-pale);
+                 color: var(--green-dark); font-weight: 800; font-size: 10px;
+                 letter-spacing: 1px; padding: 5px 11px; border-radius: 20px;
+                 margin-left: 6px; }
+  .cat-badge { display: inline-block; background: #fff4bd; color: #7a5a12;
+               font-weight: 800; font-size: 10px; letter-spacing: 1px;
+               padding: 5px 11px; border-radius: 20px; margin-left: 4px; }
+
+  .card { background: var(--paper); border: 1px solid var(--line); border-radius: 11px;
+          overflow: hidden; margin-bottom: 17px;
+          box-shadow: 0 2px 8px rgba(28,55,37,.035); }
+  .card-head { display: flex; justify-content: space-between; align-items: center;
+               gap: 12px; padding: 15px 18px 12px; flex-wrap: wrap; }
+  .card-head h2 { margin: 0; font-size: 15px; font-weight: 700; }
+  .card-head p  { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .btn { border: 1px solid transparent; border-radius: 7px; padding: 8px 12px;
+         font: inherit; font-weight: 650; cursor: pointer; transition: .15s ease; }
+  .btn:hover { filter: brightness(.97); }
+  .btn-primary { background: var(--green-dark); color: white; }
+  .btn-success { background: #28764b; color: white; }
+  .btn-light   { background: #f7f9f7; color: #425047; border-color: var(--line); }
+  .btn-dark    { background: #34443a; color: white; }
+
+  textarea { width: 100%; min-height: 120px; padding: 10px; border: 1px solid var(--line);
+             border-radius: 8px; font-family: inherit; font-size: 12.5px; resize: vertical; }
+  .paste-body { padding: 0 18px 15px; }
+  .paste-actions { display: flex; justify-content: space-between; align-items: center;
+                   gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+  .paste-actions .helper { color: var(--muted); font-size: 11px; }
+
+  .message { margin: 10px 18px 15px; padding: 8px 12px; background: var(--green-pale);
+             color: var(--green-dark); border-radius: 6px; font-size: 12px; display: none; }
+  .message.show { display: block; }
+  .message.error { background: #fdecea; color: var(--red); }
+
+  .table-wrap { overflow: auto; width: 100%; border-top: 1px solid var(--line); }
+  table { border-collapse: separate; border-spacing: 0; width: max-content;
+          min-width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { border-right: 1px solid #e0e6e1; border-bottom: 1px solid #e0e6e1;
+           padding: 7px 9px; text-align: left; white-space: nowrap; font-size: 12px; }
+  th { position: sticky; top: 0; z-index: 2; background: #e8f0e9; color: #294b35;
+       font-size: 10px; font-weight: 800; line-height: 1.25; letter-spacing: .15px; }
+  tbody tr:hover td { background: #f7faf7; }
+  td input { width: 100%; min-width: 90px; padding: 4px 6px; font-family: inherit;
+             font-size: 12px; color: var(--ink); border: 1px solid #d3ddd5;
+             border-radius: 4px; background: #fff; }
+  td input:focus { outline: none; border-color: var(--green-dark); }
+  .action-col { width: 50px; text-align: center; }
+  .btn-del { background: #fdecea; color: var(--red); border: 1px solid #f5c6c2;
+             border-radius: 4px; padding: 2px 8px; font-size: 12px; cursor: pointer; }
+
+  .empty { padding: 32px 16px; text-align: center; color: var(--muted);
+           border-top: 1px solid var(--line); }
+  .empty.hidden { display: none; }
+
+  .table-footer { display: flex; justify-content: space-between; align-items: center;
+                  padding: 10px 18px; color: var(--muted); font-size: 11px;
+                  border-top: 1px solid var(--line); }
+  .mode-label { font-size: 10px; font-weight: 800; letter-spacing: 1px;
+                color: var(--green-dark); background: var(--green-pale);
+                border-radius: 20px; padding: 5px 11px; }
+
+  footer { color: #87928a; font-size: 10px; display: flex;
+           justify-content: space-between; padding: 4px 2px 12px; }
+
+  .toast { position: fixed; right: 22px; bottom: 22px; background: #263b2d;
+           color: white; padding: 11px 15px; border-radius: 8px; opacity: 0;
+           transform: translateY(8px); pointer-events: none; transition: .2s;
+           box-shadow: 0 5px 20px #0002; z-index: 50; font-size: 12px; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 700px) {
+    .page { padding: 16px 10px; }
+    .page-header { align-items: flex-start; flex-direction: column; }
+    .actions { justify-content: flex-start; }
+  }
+  @media print {
+    @page { size: A3 landscape; margin: 8mm; }
+    body { background: white; font-size: 9px; }
+    .page { max-width: none; padding: 0; }
+    .no-print, .actions, .paste-body, .table-footer, footer, .toast { display: none !important; }
+    .card { box-shadow: none; border: 0; }
+    .card-head { padding: 5px 0; }
+    .table-wrap { overflow: visible; border: 0; }
+    table { width: 100%; min-width: 0; table-layout: auto; }
+    th, td { padding: 4px 3px; font-size: 7px; white-space: normal; }
+    th { position: static; background: #e8f0e9; }
+    td input { border: none; padding: 0; font-size: 7px; }
+  }
+</style>
+</head>
+<body>
+<main class="page">
+
+  <header class="page-header">
+    <div>
+      <p class="eyebrow" id="eyebrowText">NAGPUR DIVISION</p>
+      <h1>
+        <span id="lobbyTitle">Lobby</span>
+        <span class="cat-badge" id="catBadge">CATEGORY</span>
+      </h1>
+      <p class="subtitle">Paste <b><span id="catSubtitle">category</span></b> crew data for <b><span id="lobbySubtitle">lobby</span></b>. Saved rows feed the Staff Position report.</p>
+    </div>
+  </header>
+
+  <section class="card no-print">
+    <div class="card-head">
+      <div>
+        <h2>1. Paste Excel data</h2>
+        <p>Copy rows from Excel (tab-separated). Header row is optional.</p>
+      </div>
+    </div>
+    <div class="paste-body">
+      <textarea id="pasteArea" spellcheck="false" placeholder="Paste copied Excel cells here. One crew per row.&#10;Columns: SNO · CREW ID · CREW NAME · CREW DESIGNATION · FORTNIGHT Hrs · AVAIL TIME · SIGN ON · TRAIN NO · FROM STTN · TO STTN · SIGNON SINCE"></textarea>
+      <div class="paste-actions">
+        <span class="helper">11 columns · any number of crew rows</span>
+        <div class="actions">
+          <button class="btn btn-light" id="clearPasteBtn" type="button">Clear</button>
+          <button class="btn btn-primary" id="loadBtn" type="button">Load into table</button>
+        </div>
+      </div>
+    </div>
+    <div class="message" id="message"></div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <div>
+        <h2>2. <span id="lobbyTitle2">Lobby</span> · <span id="catTitle2">Category</span> crew</h2>
+        <p id="rowCount">0 crew records</p>
+      </div>
+      <div class="actions no-print">
+        <button class="btn btn-primary" id="editBtn" type="button">Edit Table</button>
+        <button class="btn btn-success" id="saveBtn" type="button" hidden>Save Changes</button>
+        <button class="btn btn-light" id="cancelBtn" type="button" hidden>Cancel</button>
+        <button class="btn btn-light" id="addRowBtn" type="button">+ Add row</button>
+        <button class="btn btn-light" id="csvBtn" type="button">Export CSV</button>
+        <button class="btn btn-dark" id="printBtn" type="button">Print / PDF</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>SNO.</th>
+            <th>CREW ID</th>
+            <th>CREW NAME</th>
+            <th>CREW DESIGNATION</th>
+            <th>FORTNIGHT Hrs</th>
+            <th>AVAIL TIME</th>
+            <th>SIGN ON</th>
+            <th>TRAIN NO</th>
+            <th>FROM STTN</th>
+            <th>TO STTN</th>
+            <th>SIGNON SINCE</th>
+            <th class="action-col no-print">ACTION</th>
+          </tr>
+        </thead>
+        <tbody id="crewBody"></tbody>
+      </table>
+      <div class="empty" id="emptyState">No crew data loaded — paste Excel rows above and click "Load into table".</div>
+    </div>
+    <div class="table-footer">
+      <span>Rows are saved to this browser and used by the Staff Position report.</span>
+      <span class="mode-label" id="modeLabel">VIEW MODE</span>
+    </div>
+  </section>
+
+  <footer>
+    <span id="footerName">Lobby · Category · ON/LINE Crew Register</span>
+    <span id="footerDate"></span>
+  </footer>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script type="module">
+  import { db } from './firebase-init.js';
+import { ref, set, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+(function () {
+  "use strict";
+
+  /* ===== CONFIG — CHANGE THESE 4 LINES PER FILE ===== */
+  var LOBBY_KEY   = "NGP_GNQ";        // ← storage lobby id (NGP_GNQ, AMLA_JNO, DHQ, TEO, BPQ, GGS, TAE, MJRI, WR, BTBR)
+  var LOBBY_NAME  = "NGP + GNQ";      // ← display lobby name (matches staff table LOBBY column exactly)
+  var COLUMN_KEY  = "SNPOST";           // ← ONLINE | REST | GOC | SPLDUTY | INSTBSL | LR | MISC | TRGBSL | LEAVE | SPLCL | SICK | ABSENT | DTCAJNI | PME | SNPOST
+  var COLUMN_NAME = "S/N POST";           // ← display label ("ON / LINE", "REST", "GOC", "SPL DUTY", "INST BSL", "L/R", "MISC (TA/ENQ/SUS)", "TRG BSL", "LEAVE", "SPL CL", "SICK", "ABSENT", "DTC AJNI", "PME", "S/N POST")
+  /* =================================================== */
+
+  var STORAGE_KEY = "ngpCrewData_" + LOBBY_KEY + "_" + COLUMN_KEY;
+  var LEGACY_KEY  = (COLUMN_KEY === "ONLINE") ? "ngpCrewData_" + LOBBY_KEY : null;
+
+  // Migrate old ONLINE key → new suffixed key (one-time, harmless)
+  if (LEGACY_KEY && !localStorage.getItem(STORAGE_KEY)) {
+    var legacy = localStorage.getItem(LEGACY_KEY);
+    if (legacy) {
+      try { localStorage.setItem(STORAGE_KEY, legacy); } catch (e) {}
+    }
+  }
+
+  var COLS = 11;
+  var HEADERS = ["SNO.","CREW ID","CREW NAME","CREW DESIGNATION","FORTNIGHT Hrs",
+                 "AVAIL TIME","SIGN ON","TRAIN NO","FROM STTN","TO STTN","SIGNON SINCE"];
+
+  /* Header/badge text derived from config */
+  document.title = LOBBY_NAME + " · " + COLUMN_NAME + " · Crew";
+  document.getElementById("eyebrowText").textContent =
+    "NAGPUR DIVISION · " + LOBBY_NAME.toUpperCase() + " LOBBY";
+  document.getElementById("lobbyTitle").textContent = LOBBY_NAME;
+  document.getElementById("lobbyTitle2").textContent = LOBBY_NAME;
+  document.getElementById("lobbySubtitle").textContent = LOBBY_NAME;
+  document.getElementById("catBadge").textContent = COLUMN_NAME;
+  document.getElementById("catSubtitle").textContent = COLUMN_NAME;
+  document.getElementById("catTitle2").textContent = COLUMN_NAME;
+  document.getElementById("footerName").textContent =
+    LOBBY_NAME + " · " + COLUMN_NAME + " · Crew Register";
+
+  var data = [];
+  var snapshot = null;
+  var editMode = false;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var pasteArea  = $("pasteArea");
+  var crewBody   = $("crewBody");
+  var rowCount   = $("rowCount");
+  var message    = $("message");
+  var emptyState = $("emptyState");
+  var modeLabel  = $("modeLabel");
+  var toastEl    = $("toast");
+  var toastTimer = null;
+
+   function saveCrewToStorage() {
+  // This creates a path like: crewData/NGP_GNQ/ONLINE
+  const dbPath = `crewData/${LOBBY_KEY}/${COLUMN_KEY}`;
+  
+  set(ref(db, dbPath), data)
+    .then(() => {
+      console.log("Saved to cloud!");
+    })
+    .catch((error) => {
+      console.error("Error saving to cloud:", error);
+      alert("Error saving data. Check console.");
+    });
+}
+
+  async function loadCrewFromStorage() {
+  try {
+    const dbPath = `crewData/${LOBBY_KEY}/${COLUMN_KEY}`;
+    const snapshot = await get(ref(db, dbPath));
+    if (snapshot.exists()) {
+      return snapshot.val();
+    }
+    return [];
+  } catch (e) {
+    console.error(e);
+    return [];
+  }
+}
+
+  function toast(msg, isError) {
+    toastEl.textContent = msg;
+    toastEl.style.background = isError ? "#8a2a1e" : "#263b2d";
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 2400);
+  }
+
+  function showMessage(text, isError) {
+    if (!text) { message.classList.remove("show"); message.textContent = ""; return; }
+    message.textContent = text;
+    message.className = "message show" + (isError ? " error" : "");
+  }
+
+  function parsePaste(text) {
+    var lines = String(text).replace(/\r/g, "").split("\n");
+    var out = [];
+    lines.forEach(function (line) {
+      if (line.trim() === "") return;
+      var cells = line.split("\t").map(function (c) { return c.trim(); });
+      if (cells.length === 1) cells = line.trim().split(/\s{2,}/);
+      if (/crew\s*id/i.test(line) && /crew\s*name/i.test(line)) return;
+      if (cells.every(function (c) { return c === ""; })) return;
+      while (cells.length < COLS) cells.push("");
+      out.push(cells.slice(0, COLS));
+    });
+    out.forEach(function (r, i) { if (!r[0]) r[0] = String(i + 1); });
+    return out;
+  }
+
+  function render() {
+    crewBody.innerHTML = "";
+
+    data.forEach(function (row, r) {
+      var tr = document.createElement("tr");
+
+      for (var c = 0; c < COLS; c++) {
+        var td = document.createElement("td");
+        if (editMode) {
+          var input = document.createElement("input");
+          input.type = "text";
+          input.value = row[c] == null ? "" : row[c];
+          input.dataset.r = r;
+          input.dataset.c = c;
+          input.addEventListener("input", function (e) {
+            data[+e.target.dataset.r][+e.target.dataset.c] = e.target.value;
+          });
+          td.appendChild(input);
+        } else {
+          td.textContent = row[c] == null ? "" : row[c];
+        }
+        tr.appendChild(td);
+      }
+
+      var tdA = document.createElement("td");
+      tdA.className = "action-col no-print";
+      if (editMode) {
+        var del = document.createElement("button");
+        del.className = "btn-del";
+        del.type = "button";
+        del.textContent = "✕";
+        del.title = "Delete row";
+        del.addEventListener("click", function () {
+          data.splice(r, 1);
+          saveCrewToStorage();
+          render();
+          toast("Row deleted");
+        });
+        tdA.appendChild(del);
+      }
+      tr.appendChild(tdA);
+
+      crewBody.appendChild(tr);
+    });
+
+    emptyState.className = data.length ? "empty hidden" : "empty";
+    rowCount.textContent = data.length + " crew record" + (data.length === 1 ? "" : "s");
+    modeLabel.textContent = editMode ? "EDIT MODE" : "VIEW MODE";
+
+    $("editBtn").hidden   = editMode;
+    $("addRowBtn").hidden = editMode;
+    $("saveBtn").hidden   = !editMode;
+    $("cancelBtn").hidden = !editMode;
+  }
+
+  $("loadBtn").addEventListener("click", function () {
+    var text = pasteArea.value;
+    if (!text.trim()) { showMessage("Nothing to load — paste your Excel rows first.", true); return; }
+    var rows = parsePaste(text);
+    if (!rows.length) { showMessage("Could not read any rows. Make sure you copied tab-separated Excel cells.", true); return; }
+    data = rows;
+    editMode = false;
+    snapshot = null;
+    saveCrewToStorage();
+    render();
+    showMessage("Loaded " + rows.length + " row(s) for " + LOBBY_NAME + " · " + COLUMN_NAME + ". Saved to key " + STORAGE_KEY + ".");
+    toast("Saved: " + LOBBY_NAME + " · " + COLUMN_NAME);
+  });
+
+  $("clearPasteBtn").addEventListener("click", function () {
+    pasteArea.value = "";
+    showMessage("");
+  });
+
+  $("editBtn").addEventListener("click", function () {
+    if (!data.length) { showMessage("Load some crew data first.", true); return; }
+    snapshot = JSON.parse(JSON.stringify(data));
+    editMode = true;
+    render();
+  });
+
+  $("saveBtn").addEventListener("click", function () {
+    editMode = false;
+    snapshot = null;
+    saveCrewToStorage();
+    render();
+    toast("Changes saved");
+  });
+
+  $("cancelBtn").addEventListener("click", function () {
+    if (snapshot) data = snapshot;
+    snapshot = null;
+    editMode = false;
+    saveCrewToStorage();
+    render();
+    toast("Changes discarded");
+  });
+
+  $("addRowBtn").addEventListener("click", function () {
+    if (!editMode) {
+      snapshot = JSON.parse(JSON.stringify(data));
+      editMode = true;
+    }
+    var blank = new Array(COLS).fill("");
+    blank[0] = String(data.length + 1);
+    data.push(blank);
+    saveCrewToStorage();
+    render();
+  });
+
+  $("csvBtn").addEventListener("click", function () {
+    if (!data.length) { showMessage("No data to export.", true); return; }
+    var quote = function (v) {
+      v = v == null ? "" : String(v);
+      return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+    };
+    var lines = [HEADERS.map(quote).join(",")]
+      .concat(data.map(function (r) { return r.map(quote).join(","); }));
+    var blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = LOBBY_KEY + "-" + COLUMN_KEY + "-" + new Date().toISOString().slice(0, 10) + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    toast("CSV exported");
+  });
+
+  $("printBtn").addEventListener("click", function () { window.print(); });
+
+  window.addEventListener("storage", function (e) {
+    if (e.key === STORAGE_KEY || e.key === null) {
+      data = loadCrewFromStorage();
+      if (!editMode) render();
+    }
+  });
+
+  data = loadCrewFromStorage();
+  render();
+
+  $("footerDate").textContent = new Date().toLocaleDateString("en-IN", {
+    day: "2-digit", month: "short", year: "numeric"
+  });
+})();
+</script>
+</body>
+</html>
